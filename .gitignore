@@ -1,3 +1,4 @@
 theory
 .venv
 __pycache__
+*.log
