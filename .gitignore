@@ -1,4 +1,5 @@
 theory
 .venv
+pract2/.env
 __pycache__
 *.log

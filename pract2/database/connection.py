@@ -1,25 +1,21 @@
-import sys
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+DATABASE_URL = os.getenv("DATABASE_URL")
+
+if DATABASE_URL is None:
+    raise RuntimeError("DATABASE_URL не найден")
+
+engine = create_engine(DATABASE_URL)
+Session = sessionmaker(bind=engine)
 
 
-def main():
-    line = list(map(int, input().split()))
-    size = line[0]
-    columns = line[1:]
-    i = 0
-    max_square = min(columns)
-    bigger_rectangle = [columns[0]]
-    for i in range(len(columns) - 1):
-        if columns[i] <= columns[i + 1]:
-            bigger_rectangle.append(columns[i + 1])
-        else:
-            while len(bigger_rectangle) > 0:
-                rec = bigger_rectangle.pop(0)
-                max_square = max(rec * (len(bigger_rectangle) + 1), max_square)
-            bigger_rectangle.append(columns[i + 1])
-    
-    print(max_square)
-
-
-
-if __name__ == '__main__':
-    main()
+def get_db():
+    session = Session()
+    try:
+        yield session
+    finally:
+        session.close()
