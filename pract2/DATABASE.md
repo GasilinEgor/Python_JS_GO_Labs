@@ -29,5 +29,5 @@ pair_count: int
 
 Marks
 marks_id: int -> PK
-shedule_id: int -> FK
+schedule_id: int -> FK
 mark: int
