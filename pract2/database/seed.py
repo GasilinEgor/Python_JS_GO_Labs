@@ -24,7 +24,6 @@ password_hasher = PasswordHash.recommended()
 
 def seed_database():
     logger.info("Начинаем инициализацию начальных данных")
-    # остальной код функции
     new_users = []
 
     with Session.begin() as session:

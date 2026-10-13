@@ -1,4 +1,5 @@
 from logging.config import fileConfig
+import logging
 
 from sqlalchemy import engine_from_config
 from sqlalchemy import pool
@@ -55,7 +56,7 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
-
+logger = logging.getLogger("alembic.env")
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
@@ -68,14 +69,16 @@ def run_migrations_online() -> None:
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
     )
-
+    logger.info("ENV: подключаемся к БД")
     with connectable.connect() as connection:
+        logger.info("ENV: подключение к БД установлено")
         context.configure(
             connection=connection, target_metadata=target_metadata
         )
-
+        logger.info("ENV: запускаем context.run_migrations()")
         with context.begin_transaction():
             context.run_migrations()
+        logger.info("ENV: миграции завершены")
 
 
 if context.is_offline_mode():
