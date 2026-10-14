@@ -5,7 +5,7 @@ from sqlalchemy import ForeignKey, String, DateTime
 
 class Tokens(Base):
     __tablename__ = "tokens"
-    token_id: Mapped[int] = mapped_column(primary_key=True)
+    token_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
     user_id: Mapped[int] = mapped_column(ForeignKey("user.user_id"), nullable=False)
     token: Mapped[str] = mapped_column(String(255), nullable=False)
     expires_at: Mapped[datetime] = mapped_column(DateTime(), nullable=False)

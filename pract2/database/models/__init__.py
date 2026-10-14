@@ -4,3 +4,4 @@ from .studentsSchedule import StudentSchedule
 from .tokens import Tokens
 from .universitySubjects import UniversitySubjects
 from .user import User
+from .studentSubjects import StudentSubjects
