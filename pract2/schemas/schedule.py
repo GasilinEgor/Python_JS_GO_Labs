@@ -1,28 +1,21 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from datetime import date
 
 
-class CreateDiscipline(BaseModel):
-    student_id: int
-    subject_id: int
-
-class ChangeDiscipline(BaseModel):
-    student_id: int
+class ScheduleResponse(BaseModel):
     schedule_id: int
+    student_subjects_id: int
     date: date
     pair_count: int
 
-class AddMark(BaseModel):
-    student_id: int
-    schedule_id: int
-    mark: int
 
-class SetSubjectSchedule(BaseModel):
-    student_id: int
-    subject_id: int
+class ScheduleCreate(BaseModel):
+    student_subjects_id: int = Field(gt=0)
     date: date
-    pair_count: int
+    pair_count: int = Field(ge=1)
 
-class ChangeSubjectSchedule(BaseModel):
-    student_id: int
-    schedule_id: int
+
+class ScheduleUpdate(BaseModel):
+    date: date
+    pair_count: int = Field(ge=1)
+ 
