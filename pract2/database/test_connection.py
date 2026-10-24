@@ -1,3 +1,6 @@
+
+import traceback
+
 from sqlalchemy import text
 from connection import engine
 
@@ -7,6 +10,5 @@ try:
         print("Результат запроса:", result.scalar())
         print("Подключение к PostgreSQL успешно!")
 
-except Exception as e:
-    print("Ошибка подключения к PostgreSQL")
-    print(e)
+except Exception:
+    traceback.print_exc()
