@@ -9,6 +9,7 @@ from alembic.config import Config
 from database.seed import seed_database
 
 from routers.session import router as session_router
+from routers.disciplines import router as desciplines_router
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -26,6 +27,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 app.include_router(session_router)
+app.include_router(desciplines_router)
 
 
 @app.get("/")
