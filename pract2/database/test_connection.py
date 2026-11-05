@@ -1,8 +1,7 @@
-
 import traceback
 
-from sqlalchemy import text
 from connection import engine
+from sqlalchemy import text
 
 try:
     with engine.connect() as connection:

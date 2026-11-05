@@ -10,7 +10,7 @@ class StudentResponse(BaseModel):
 class StudentAverageResponse(BaseModel):
     student_id: int
     average_grade: float | None
-    marks_Count: int
+    marks_count: int
 
 
 class StudentListResponse(BaseModel):

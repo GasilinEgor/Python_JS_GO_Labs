@@ -1,5 +1,6 @@
-from pydantic import BaseModel, Field
 from datetime import date
+
+from pydantic import BaseModel, Field
 
 
 class ScheduleResponse(BaseModel):
@@ -18,4 +19,3 @@ class ScheduleCreate(BaseModel):
 class ScheduleUpdate(BaseModel):
     date: date
     pair_count: int = Field(ge=1)
- 

@@ -1,14 +1,12 @@
-from logging.config import fileConfig
 import logging
+import os
+from logging.config import fileConfig
 
-from sqlalchemy import engine_from_config
-from sqlalchemy import pool
+from dotenv import load_dotenv
+from sqlalchemy import engine_from_config, pool
 
 from alembic import context
-from database.models import *
 from database.base import Base
-from dotenv import load_dotenv
-import os
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
@@ -33,6 +31,7 @@ target_metadata = Base.metadata
 load_dotenv()
 config.set_main_option("sqlalchemy.url", os.getenv("DATABASE_URL"))
 
+
 def run_migrations_offline() -> None:
     """Run migrations in 'offline' mode.
 
@@ -56,7 +55,10 @@ def run_migrations_offline() -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+
 logger = logging.getLogger("alembic.env")
+
+
 def run_migrations_online() -> None:
     """Run migrations in 'online' mode.
 
