@@ -3,3 +3,4 @@ theory
 pract2/.env
 __pycache__
 *.log
+.ruff_cache
