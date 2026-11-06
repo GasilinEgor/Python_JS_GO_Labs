@@ -64,16 +64,24 @@ def seed_database():
 
 
 def add_test_users():
-    users = {
-        "my_student": User(
+    users = [
+        User(
             username="teach1",
             role_id=1,
             password=password_hasher.hash("12345678"),
         ),
-    }
+        User(
+            username="stu1",
+            role_id=2,
+            password=password_hasher.hash("12345678"),
+        ),
+    ]
 
     with Session.begin() as session:
-        for user in users.values():
+        existing_users = set(session.scalars(select(User.username)).all())
+        for user in users:
+            if user.username in existing_users:
+                continue
             session.add(user)
 
 
