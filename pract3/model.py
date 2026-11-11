@@ -11,13 +11,13 @@ class Base(DeclarativeBase):
 class GenerativeTable(Base):
     __tablename__ = 'generate_data'
 
-    field_id: Mapped[UUID] = mapped_column(primary_key=True)
-    ip: Mapped[str] = mapped_column(String(15), nullable=False)
-    port: Mapped[int] = mapped_column(Integer, nullable=False)
+    field_id: Mapped[UUID] = mapped_column(primary_key=True, autoincrement=False)
+    ip: Mapped[str] = mapped_column(String(15), primary_key=True)
+    port: Mapped[int] = mapped_column(Integer, nullable=False, primary_key=True)
     added_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
 
-def create_engine(db_url: str):
+def make_db_engine(db_url: str):
     engine = create_engine(db_url)
     Base.metadata.create_all(engine)
 

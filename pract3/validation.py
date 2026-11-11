@@ -1,3 +1,6 @@
+import argparse
+
+
 def check_workers_valid(args: argparse.Namespace) -> bool:
     PARALLEL_MODES = ('threading', "multiprocessing", "asyncio")
     if args.mode in PARALLEL_MODES:

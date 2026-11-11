@@ -19,7 +19,7 @@ def generate_port() -> int:
 
 def generate_record(uuid_pool: list[uuid.UUID]) -> dict:
     record = {
-        "file_id": random.choice(uuid_pool),
+        "field_id": random.choice(uuid_pool),
         "ip": generate_ipv4(),
         "port": generate_port(),
         "added_at": datetime.utcnow()
