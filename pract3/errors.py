@@ -12,3 +12,7 @@ class SizeException(Exception):
 
 class SqlConnectionException(Exception):
     pass
+
+
+class ThreadWorkError(Exception):
+    pass

@@ -6,6 +6,7 @@ from logger import setup
 import argparse
 
 from modes.single import run as single_run
+from modes.threading import run as threading_run
 
 
 
@@ -37,7 +38,8 @@ def save_results(report: dict, result_file: str) -> None:
 
 def main():
     MODES = {
-        'single': single_run
+        'single': single_run,
+        'threading': threading_run
     }
     parser = create_parser()
     args = parser.parse_args()
@@ -48,13 +50,16 @@ def main():
     engine = make_db_engine(db_url)
 
     logger = setup(args.log_file)
-    report = MODES[args.mode](
-        engine=engine, 
-        rows=args.rows, 
-        unique_file_ids=args.unique_file_ids, 
-        batch_size=args.batch_size, 
-        logger=logger
-        )
+    modes_parameters = {
+        "engine": engine, 
+        "rows": args.rows, 
+        "unique_file_ids": args.unique_file_ids, 
+        "batch_size": args.batch_size, 
+        "logger": logger
+    }
+    if args.workers:
+        modes_parameters['workers'] = args.workers
+    report = MODES[args.mode](**modes_parameters)
 
     save_results(report, args.results_file)
 

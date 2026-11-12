@@ -35,7 +35,6 @@ def run(engine: Engine, rows: int, unique_file_ids: int, batch_size: int, logger
 
             inserted = result.rowcount
             if inserted < 0:
-                # Защита от драйверов/режимов, где rowcount недоступен.
                 inserted = 0
             inserted_rows += result.rowcount
             batch_num += 1
