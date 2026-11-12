@@ -24,8 +24,8 @@ def save_results(report: dict, result_file: str) -> None:
         f"Режим работы: {report["mode"]}\n"
         f"Количество потоков/процессов: {report['workers']}\n"
         f"Вставлено строк: {report["inserted_rows"]}\n"
-        f"Время работы: {report["work_time"]}"
-        f"Максимальные затраты памяти: {report["peak_memory"]}"
+        f"Время работы: {report["work_time"]}\n"
+        f"Максимальные затраты памяти: {report["peak_memory"]} мб"
     )
 
     print(text)
@@ -48,13 +48,15 @@ def main():
     engine = make_db_engine(db_url)
 
     logger = setup(args.log_file)
-    MODES[args.mode](
+    report = MODES[args.mode](
         engine=engine, 
         rows=args.rows, 
         unique_file_ids=args.unique_file_ids, 
         batch_size=args.batch_size, 
         logger=logger
         )
+
+    save_results(report, args.results_file)
 
 
 if __name__ == '__main__':
