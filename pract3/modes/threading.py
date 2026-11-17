@@ -3,31 +3,13 @@ from generator import generate_batch, generate_uuid
 from model import GenerativeTable
 from metrics import get_memory
 from errors import ThreadWorkError
+from split_work import split_work
 
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
 import uuid
 import time
 import threading
-
-
-def split_work(rows_count: int, workers: int) -> list[tuple[int, int]]:
-    clear_rows = rows_count // workers
-    dirty_rows = rows_count % workers
-    ranges = []
-
-    start = 0
-    for tworker_index in range(workers):
-        end = start + clear_rows
-        if dirty_rows > 0:
-            end += 1
-            dirty_rows -= 1
-        
-        ranges.append(end - start)
-        start = end
-    
-    print(ranges)
-    return ranges
 
 
 logger = logging.getLogger(__name__)
@@ -97,8 +79,7 @@ def run(engine: Engine, rows: int, unique_file_ids: int, batch_size: int, worker
     
     work_time =  time.perf_counter() - threads_start
     inserted_rows = sum((result["inserted"] for result in results))
-    # max_memory = max((result["memory"] for result in results))
-    max_memory = 0
+    max_memory = max((result["memory"] for result in results))
 
     report = {
         "mode": "threading",

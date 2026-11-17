@@ -1,4 +1,5 @@
 import logging
+from logging.handlers import QueueHandler
 
 
 def setup(log_file: str) -> logging.Logger:
@@ -17,5 +18,19 @@ def setup(log_file: str) -> logging.Logger:
     
     logger.addHandler(file_handler)
     logger.addHandler(console_handler)
+
+    return logger
+
+
+def setup_worker(log_queue) -> logging.Logger:
+    logger = logging.getLogger("db_generator")
+    logger.setLevel(logging.INFO)
+
+    logger.handlers.clear()
+
+    queue_handler = QueueHandler(log_queue)
+    logger.addHandler(queue_handler)
+
+    logger.propagate = False
 
     return logger

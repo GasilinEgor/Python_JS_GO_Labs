@@ -43,10 +43,10 @@ def check_db_creds_valid(args: argparse.Namespace) -> bool:
 
 
 def check_port_valid(port: int) -> bool:
-    if 1 <= port <= 65535:
+    if not (1 <= port <= 65535):
         raise SqlConnectionException("Некорректное значение параметра db-port!")
     
-    return False
+    return True
 
 
 def check_db_url_valid(args: argparse.Namespace) -> bool:

@@ -7,6 +7,7 @@ import argparse
 
 from modes.single import run as single_run
 from modes.threading import run as threading_run
+from modes.multiprocessing import run as multiprocessing_run
 
 
 
@@ -16,7 +17,7 @@ def create_db_url(args: argparse.Namespace) -> str:
         db_url = f"postgresql://{args.db_user}:{args.db_password}@{args.db_host}:{args.db_port}/{args.db_name}"
     else:
         db_url = args.db_url
-
+    print(db_url)
     return db_url
 
 
@@ -39,7 +40,8 @@ def save_results(report: dict, result_file: str) -> None:
 def main():
     MODES = {
         'single': single_run,
-        'threading': threading_run
+        'threading': threading_run,
+        'multiprocessing': multiprocessing_run
     }
     parser = create_parser()
     args = parser.parse_args()
@@ -47,16 +49,21 @@ def main():
         return
 
     db_url = create_db_url(args)
-    engine = make_db_engine(db_url)
 
     logger = setup(args.log_file)
     modes_parameters = {
-        "engine": engine, 
         "rows": args.rows, 
         "unique_file_ids": args.unique_file_ids, 
         "batch_size": args.batch_size, 
         "logger": logger
     }
+    if args.mode in ("single", "threading"):
+        engine = make_db_engine(db_url)
+        modes_parameters["engine"] = engine
+    else:
+        modes_parameters["db_url"] = db_url
+        modes_parameters["log_file"] = args.log_file
+    
     if args.workers:
         modes_parameters['workers'] = args.workers
     report = MODES[args.mode](**modes_parameters)

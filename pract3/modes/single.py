@@ -16,9 +16,7 @@ def run(engine: Engine, rows: int, unique_file_ids: int, batch_size: int, logger
     start = time.perf_counter()
 
     with engine.begin() as connection:
-        print(rows)
         while inserted_rows < rows:
-            print(inserted_rows, rows)
             cur_batch_size = min(batch_size, rows - inserted_rows)
             batch = generate_batch(cur_batch_size, uuid_pool)
 
