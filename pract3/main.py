@@ -3,11 +3,13 @@ from validation import check_args_valid
 from model import make_db_engine
 from logger import setup
 
+import asyncio
 import argparse
 
 from modes.single import run as single_run
 from modes.threading import run as threading_run
 from modes.multiprocessing import run as multiprocessing_run
+from modes.asyncio import run as asynco_run
 
 
 
@@ -27,7 +29,7 @@ def save_results(report: dict, result_file: str) -> None:
         f"Количество потоков/процессов: {report['workers']}\n"
         f"Вставлено строк: {report["inserted_rows"]}\n"
         f"Время работы: {report["work_time"]}\n"
-        f"Максимальные затраты памяти: {report["peak_memory"]} мб"
+        f"Максимальные затраты памяти: {report["peak_memory"]} мб\n"
     )
 
     print(text)
@@ -41,7 +43,8 @@ def main():
     MODES = {
         'single': single_run,
         'threading': threading_run,
-        'multiprocessing': multiprocessing_run
+        'multiprocessing': multiprocessing_run,
+        'asyncio': asynco_run
     }
     parser = create_parser()
     args = parser.parse_args()
@@ -62,11 +65,17 @@ def main():
         modes_parameters["engine"] = engine
     else:
         modes_parameters["db_url"] = db_url
+    
+    if args.mode == "multiprocessing":
         modes_parameters["log_file"] = args.log_file
     
     if args.workers:
         modes_parameters['workers'] = args.workers
-    report = MODES[args.mode](**modes_parameters)
+    
+    if args.mode == "asyncio":
+        report = asyncio.run(asynco_run(**modes_parameters))
+    else:
+        report = MODES[args.mode](**modes_parameters)
 
     save_results(report, args.results_file)
 
