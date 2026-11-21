@@ -4,19 +4,22 @@ import time
 from logger import logging, setup_worker
 from logging.handlers import QueueListener
 from generator import generate_batch, generate_uuid
-from model import GenerativeTable
-from metrics import get_memory
+from model import GenerativeTable, make_db_engine
+from metrics import get_memory, get_process_tree_memory
 from split_work import split_work
 
-from sqlalchemy import create_engine
+
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.engine import Engine
+
+import psutil
+import os
 
 
 def insert_worker(db_url: str, rows: int, batch_size: int, uuid_pool: list, worker_id: int, results: multiprocessing.Queue, log_queue) -> None:
     logger = setup_worker(log_queue)
     logger.getEffectiveLevel()
-    engine: Engine = create_engine(db_url)
+    engine: Engine = make_db_engine(db_url)
     inserted_rows = 0
     batch_num = 0
     max_memory = get_memory()
@@ -25,6 +28,7 @@ def insert_worker(db_url: str, rows: int, batch_size: int, uuid_pool: list, work
     try:
         with engine.begin() as connection:
             while inserted_rows < rows:
+                start_batch_time = time.perf_counter()
                 cur_batch_size = min(batch_size, rows - inserted_rows)
                 batch = generate_batch(cur_batch_size, uuid_pool)
 
@@ -37,13 +41,13 @@ def insert_worker(db_url: str, rows: int, batch_size: int, uuid_pool: list, work
 
                 inserted_rows += inserted
                 batch_num += 1
-                work_time = time.perf_counter() - start_process
+                work_time = time.perf_counter() - start_batch_time
 
                 current_memory = get_memory()
                 max_memory = max(max_memory, current_memory)
 
-                logger.info("[multiprocessing:%s] processed batch %s (size=%s, inserted=%s)",
-                    worker_id, batch_num, cur_batch_size, inserted)
+                logger.info("[multiprocessing:%s] processed batch %s (size=%s, inserted=%s) at %s s",
+                    worker_id, batch_num, cur_batch_size, inserted, time.perf_counter() - start_batch_time)
 
         results.put(
             {
@@ -70,7 +74,7 @@ def insert_worker(db_url: str, rows: int, batch_size: int, uuid_pool: list, work
         engine.dispose()
 
 
-def run(db_url: str, rows: int, unique_file_ids: int, batch_size: int, workers: int, logger: logging.Logger, log_file: str) -> dict:
+def run(db_url: str, rows: int, unique_file_ids: int, batch_size: int, workers: int, log_file: str) -> dict:
     uuid_pool = generate_uuid(unique_count=unique_file_ids)
     start = time.perf_counter()
     initial_memory = get_memory()
@@ -104,10 +108,21 @@ def run(db_url: str, rows: int, unique_file_ids: int, batch_size: int, workers: 
         processes.append(process)
         process.start()
 
+    worker_results = []
+
+    max_memory = initial_memory
+    parent = psutil.Process(os.getpid())
+
+    while any(process.is_alive() for process in processes):
+        current_memory = get_process_tree_memory()
+        max_memory = max(max_memory, current_memory)
+
+        time.sleep(0.05)
+
+    max_memory = max(max_memory, get_process_tree_memory())
+
     for process in processes:
         process.join()
-
-    worker_results = []
 
     for _ in processes:
         worker_results.append(results.get())
@@ -123,8 +138,6 @@ def run(db_url: str, rows: int, unique_file_ids: int, batch_size: int, workers: 
         )
 
     inserted_rows = sum(result["inserted_rows"] for result in worker_results)
-
-    max_memory = max([initial_memory] + [result["peak_memory"]for result in worker_results])
 
     report = {
         "mode": "multiprocessing",

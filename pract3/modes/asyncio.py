@@ -2,17 +2,20 @@
 import asyncio
 import time
 
-from sqlalchemy.ext.asyncio import (
-    AsyncEngine,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncEngine
+
 from sqlalchemy.dialects.postgresql import insert
 
 from logger import logging
 from generator import generate_batch, generate_uuid
-from model import GenerativeTable
+from model import GenerativeTable, make_async_db_engine, Base
 from metrics import get_memory
 from split_work import split_work
+
+
+async def create_tables(engine: AsyncEngine) -> None:
+    async with engine.begin() as connection:
+        await connection.run_sync(Base.metadata.create_all)
 
 
 def change_url(db_url: str) -> str:
@@ -30,6 +33,7 @@ async def insert_worker(engine: AsyncEngine, rows: int, batch_size: int, uuid_po
     try:
         async with engine.begin() as connection:
             while inserted_rows < rows:
+                start_batch_time = time.perf_counter()
                 cur_batch_size = min(batch_size, rows - inserted_rows)
 
                 batch = generate_batch(cur_batch_size, uuid_pool)
@@ -42,12 +46,12 @@ async def insert_worker(engine: AsyncEngine, rows: int, batch_size: int, uuid_po
 
                 inserted_rows += inserted
                 batch_num += 1
-                work_time = time.perf_counter() - start_process
+                work_time = time.perf_counter() - start_batch_time
 
                 current_memory = get_memory()
                 max_memory = max(max_memory,current_memory)
 
-                logger.info("[asyncio:%s] batch=%s size=%s ""inserted=%s time=%s ms",
+                logger.info("[asyncio:%s] batch=%s size=%s ""inserted=%s time=%s s",
                     worker_id, batch_num, cur_batch_size,inserted, work_time)
         work_time = time.perf_counter() - start_process
 
@@ -79,9 +83,10 @@ async def run(db_url: str, rows: int, unique_file_ids: int, batch_size: int, wor
 
     db_url = change_url(db_url)
     print(db_url)
-    engine = create_async_engine(db_url, pool_size=workers, max_overflow=0)
+    engine = make_async_db_engine(db_url, workers)
 
     try:
+        await create_tables(engine)
         tasks = []
 
         for worker_id, worker_rows in enumerate(rows_per_worker):

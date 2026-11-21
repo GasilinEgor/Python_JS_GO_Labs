@@ -5,6 +5,7 @@ from logger import setup
 
 import asyncio
 import argparse
+import logging
 
 from modes.single import run as single_run
 from modes.threading import run as threading_run
@@ -19,7 +20,6 @@ def create_db_url(args: argparse.Namespace) -> str:
         db_url = f"postgresql://{args.db_user}:{args.db_password}@{args.db_host}:{args.db_port}/{args.db_name}"
     else:
         db_url = args.db_url
-    print(db_url)
     return db_url
 
 
@@ -39,44 +39,91 @@ def save_results(report: dict, result_file: str) -> None:
         file.write("\n")
 
 
+def start_single_mode(args: argparse.Namespace) -> dict:
+    logger = setup(args.log_file)
+    db_url = create_db_url(args)
+    engine = make_db_engine(db_url)
+
+    modes_parameters = {
+        "engine": engine,
+        "rows": args.rows,
+        "unique_file_ids": args.unique_file_ids, 
+        "batch_size": args.batch_size, 
+        "logger": logger
+    }
+
+    report = single_run(**modes_parameters)
+
+    return report
+
+
+def start_threading_mode(args: argparse.Namespace) -> dict:
+    logger = setup(args.log_file)
+    db_url = create_db_url(args)
+    engine = make_db_engine(db_url, args.workers)
+
+    modes_parameters = {
+        "engine": engine,
+        "rows": args.rows,
+        "unique_file_ids": args.unique_file_ids, 
+        "batch_size": args.batch_size,
+        "workers":  args.workers,
+        "logger": logger
+    }
+
+    report = threading_run(**modes_parameters)
+
+    return report
+
+
+def start_multiprocessing_mode(args: argparse.Namespace) -> dict:
+    db_url = create_db_url(args)
+
+    modes_parameters = {
+        "db_url": db_url,
+        "rows": args.rows,
+        "unique_file_ids": args.unique_file_ids, 
+        "batch_size": args.batch_size,
+        "workers":  args.workers,
+        "log_file": args.log_file
+    }
+
+    report = multiprocessing_run(**modes_parameters)
+
+    return report
+
+
+def start_asyncio_mode(args: argparse.Namespace) -> dict:
+    logger = setup(args.log_file)
+    db_url = create_db_url(args)
+    
+    modes_parameters = {
+        "db_url": db_url,
+        "rows": args.rows,
+        "unique_file_ids": args.unique_file_ids, 
+        "batch_size": args.batch_size,
+        "workers":  args.workers,
+        "logger": logger
+    }
+
+    report = asyncio.run(asynco_run(**modes_parameters))
+
+    return report
+
+
 def main():
     MODES = {
-        'single': single_run,
-        'threading': threading_run,
-        'multiprocessing': multiprocessing_run,
-        'asyncio': asynco_run
+        'single': start_single_mode,
+        'threading': start_threading_mode,
+        'multiprocessing': start_multiprocessing_mode,
+        'asyncio': start_asyncio_mode
     }
     parser = create_parser()
     args = parser.parse_args()
     if not check_args_valid(args):
         return
-
-    db_url = create_db_url(args)
-
-    logger = setup(args.log_file)
-    modes_parameters = {
-        "rows": args.rows, 
-        "unique_file_ids": args.unique_file_ids, 
-        "batch_size": args.batch_size, 
-        "logger": logger
-    }
-    if args.mode in ("single", "threading"):
-        engine = make_db_engine(db_url)
-        modes_parameters["engine"] = engine
-    else:
-        modes_parameters["db_url"] = db_url
     
-    if args.mode == "multiprocessing":
-        modes_parameters["log_file"] = args.log_file
-    
-    if args.workers:
-        modes_parameters['workers'] = args.workers
-    
-    if args.mode == "asyncio":
-        report = asyncio.run(asynco_run(**modes_parameters))
-    else:
-        report = MODES[args.mode](**modes_parameters)
-
+    report = MODES[args.mode](args)
     save_results(report, args.results_file)
 
 

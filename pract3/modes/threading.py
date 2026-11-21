@@ -24,6 +24,7 @@ def one_thread_work(engine: Engine, rows: int, batch_size: int, uuid_pool: list[
     try:
         with engine.begin() as connection:
             while inserted_rows < rows:
+                start_batch_time = time.perf_counter()
                 cur_batch_size = min(batch_size, rows - inserted_rows)
                 batch = generate_batch(cur_batch_size, uuid_pool)
 
@@ -35,7 +36,7 @@ def one_thread_work(engine: Engine, rows: int, batch_size: int, uuid_pool: list[
                 
                 inserted_rows += inserted
                 batch_num += 1
-                work_time = time.perf_counter() - start
+                work_time = time.perf_counter() - start_batch_time
 
                 logger.info("[thread-%s] inserted batch %s (size=%s) at %s ms",
                 worker_id, batch_num, cur_batch_size, work_time)
